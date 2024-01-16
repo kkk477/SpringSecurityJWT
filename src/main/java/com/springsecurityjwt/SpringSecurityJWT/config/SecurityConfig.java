@@ -42,24 +42,30 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
+        // cors setting
         http
                 .cors((cors) -> cors.configurationSource(corsConfigurationSource()));
 
+        // csrf disable
         http
                 .csrf(AbstractHttpConfigurer::disable);
 
+        // form login disable
         http
                 .formLogin(AbstractHttpConfigurer::disable);
 
+        // http basic disable
         http
                 .httpBasic(AbstractHttpConfigurer::disable);
 
+        // 경로 인가 작업
         http
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers("/login", "/", "/join").permitAll()
                         .requestMatchers("/admin").hasAnyRole("ADMIN")
                         .anyRequest().authenticated());
 
+        // 세션 설정
         http
                 .sessionManagement((session) -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -67,6 +73,7 @@ public class SecurityConfig {
         http
                 .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
 
+        // UsernamePasswordAuthenticationFilter 자리에 LoginFilter를 등록
         http
                 .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class);
 

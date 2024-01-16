@@ -26,13 +26,19 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+
+        // 클라이언트 요청에서 username, password 추출
         String username = obtainUsername(request);
         String password = obtainPassword(request);
 
+        // 스프링 시큐리티에서 username, password를 검증하기 위해서는 token에 담아야 함
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password, null);
+
+        // token에 담은 정보 검증을 위해 AuthenticationManager로 전달
         return authenticationManager.authenticate(authenticationToken);
     }
 
+    // 로그인 성공시 실행하는 메소드
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
         CustomUserDetails userDetails = (CustomUserDetails) authResult.getPrincipal();
@@ -43,10 +49,11 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         GrantedAuthority auth = iterator.next();
         String role = auth.getAuthority();
 
-        String token = jwtUtil.createJwt(username, role, 60*60*10L);
+        String token = jwtUtil.createJwt(username, role, 60*60*100L);
         response.addHeader("Authorization", "Bearer " + token);
     }
 
+    // 로그인 실패시 실행하는 메소드
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
         response.setStatus(401);
