@@ -3,9 +3,11 @@ package com.springsecurityjwt.SpringSecurityJWT.jwt;
 import com.springsecurityjwt.SpringSecurityJWT.Dto.CustomUserDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -41,21 +43,48 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     // 로그인 성공시 실행하는 메소드
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        CustomUserDetails userDetails = (CustomUserDetails) authResult.getPrincipal();
-        String username = userDetails.getUsername();
+//        CustomUserDetails userDetails = (CustomUserDetails) authResult.getPrincipal();
+//        String username = userDetails.getUsername();
+//
+//        Collection<? extends GrantedAuthority> authorities = authResult.getAuthorities();
+//        Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
+//        GrantedAuthority auth = iterator.next();
+//        String role = auth.getAuthority();
+//
+//        String token = jwtUtil.createJwt(username, role, 60*60*100L);
+//        response.addHeader("Authorization", "Bearer " + token);
+        /**-----------------------------Refresh token Version----------------------------------**/
+
+        // 유저 정보
+        String username = authResult.getName();
 
         Collection<? extends GrantedAuthority> authorities = authResult.getAuthorities();
         Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
         GrantedAuthority auth = iterator.next();
         String role = auth.getAuthority();
 
-        String token = jwtUtil.createJwt(username, role, 60*60*100L);
-        response.addHeader("Authorization", "Bearer " + token);
+        // 토큰 생성
+        String access = jwtUtil.createJwt("access", username, role, 60 * 10000L);
+        String refresh = jwtUtil.createJwt("refresh", username, role, 60 * 60 * 24 * 1000L);
+
+        // 응답 설정
+        response.setHeader("access", access);
+        response.addCookie(createCookie("refresh", refresh));
+        response.setStatus(HttpStatus.OK.value());
     }
 
     // 로그인 실패시 실행하는 메소드
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
         response.setStatus(401);
+    }
+
+    private Cookie createCookie(String key, String value) {
+        Cookie cookie = new Cookie(key, value);
+        cookie.setMaxAge(24*60*60);
+//        cookie.setSecure(true);
+//        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        return cookie;
     }
 }
