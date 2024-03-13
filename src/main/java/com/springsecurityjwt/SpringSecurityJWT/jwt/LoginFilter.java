@@ -1,6 +1,8 @@
 package com.springsecurityjwt.SpringSecurityJWT.jwt;
 
 import com.springsecurityjwt.SpringSecurityJWT.Dto.CustomUserDetails;
+import com.springsecurityjwt.SpringSecurityJWT.entity.RefreshEntity;
+import com.springsecurityjwt.SpringSecurityJWT.repository.RefreshRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -17,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 
 @RequiredArgsConstructor
@@ -25,6 +28,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
     private final JWTUtil jwtUtil;
+    private final RefreshRepository refreshRepository;
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
@@ -67,6 +71,9 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         String access = jwtUtil.createJwt("access", username, role, 60 * 10000L);
         String refresh = jwtUtil.createJwt("refresh", username, role, 60 * 60 * 24 * 1000L);
 
+        //Refresh 토큰 저장
+        addRefreshEntity(username, refresh, 60 * 60 * 24 * 1000L);
+
         // 응답 설정
         response.setHeader("access", access);
         response.addCookie(createCookie("refresh", refresh));
@@ -86,5 +93,16 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 //        cookie.setPath("/");
         cookie.setHttpOnly(true);
         return cookie;
+    }
+
+    private void addRefreshEntity(String username, String refresh, Long expiredMs) {
+        Date date = new Date(System.currentTimeMillis() + expiredMs);
+
+        RefreshEntity refreshEntity = new RefreshEntity();
+        refreshEntity.setUsername(username);
+        refreshEntity.setRefresh(refresh);
+        refreshEntity.setExpiration(date.toString());
+
+        refreshRepository.save(refreshEntity);
     }
 }
