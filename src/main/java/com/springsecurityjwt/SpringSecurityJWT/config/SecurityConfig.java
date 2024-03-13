@@ -75,10 +75,12 @@ public class SecurityConfig {
 
         http
                 .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
+        // addFilterBefore = LoginFilter 앞에 JWTFilter 를 설치
 
-        // UsernamePasswordAuthenticationFilter 자리에 LoginFilter를 등록
+        // UsernamePasswordAuthenticationFilter 자리에 LoginFilter 를 등록
         http
                 .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshRepository), UsernamePasswordAuthenticationFilter.class);
+        // addFilterAt = UsernamePasswordAuthenticationFilter 를 LoginFilter 로 교체
 
         return http.build();
     }
