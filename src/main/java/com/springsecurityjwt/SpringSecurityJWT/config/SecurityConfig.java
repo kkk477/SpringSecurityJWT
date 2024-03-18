@@ -1,5 +1,6 @@
 package com.springsecurityjwt.SpringSecurityJWT.config;
 
+import com.springsecurityjwt.SpringSecurityJWT.jwt.CustomLogoutFilter;
 import com.springsecurityjwt.SpringSecurityJWT.jwt.JWTFilter;
 import com.springsecurityjwt.SpringSecurityJWT.jwt.JWTUtil;
 import com.springsecurityjwt.SpringSecurityJWT.jwt.LoginFilter;
@@ -16,6 +17,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -81,6 +83,8 @@ public class SecurityConfig {
         http
                 .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshRepository), UsernamePasswordAuthenticationFilter.class);
         // addFilterAt = UsernamePasswordAuthenticationFilter 를 LoginFilter 로 교체
+        http
+                .addFilterBefore(new CustomLogoutFilter(jwtUtil, refreshRepository), LogoutFilter.class);
 
         return http.build();
     }
